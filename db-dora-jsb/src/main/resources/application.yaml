@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: db-dora-jsb
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    env:
+      show-values: always
+      keys-to-sanitize: .*password.*,.*secret.*,.*token.*
