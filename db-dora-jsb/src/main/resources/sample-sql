@@ -1,0 +1,15 @@
+select datname
+from pg_database
+where datistemplate = false
+order by datname;
+
+
+select current_database();
+
+
+select table_schema, table_name
+from information_schema.tables
+where table_type = 'BASE TABLE'
+  and table_schema not in ('pg_catalog', 'information_schema')
+order by table_schema, table_name;
+
