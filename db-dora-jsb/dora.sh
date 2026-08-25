@@ -42,7 +42,7 @@ lambda() {(
   set -euo pipefail
   # #############################################################
   cd "$thisDir"
-  # mvn clean package -DskipTests
+  mvn clean package -DskipTests
   # #############################################################
   cd "$thisDir/target" && pwd
   mkdir -pv "dist"
@@ -53,7 +53,7 @@ lambda() {(
   ls -lhF "dist/lambda.zip"
   # #############################################################
   aws_load_profile
-  # aws s3 sync "dist/" "s3://$KN_CBS_BUCKET/apps/$app/dist/" --delete
+  aws s3 sync "dist/" "s3://$KN_CBS_BUCKET/apps/$app/dist/" --delete
 )}
 # ###########################################################################################
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
