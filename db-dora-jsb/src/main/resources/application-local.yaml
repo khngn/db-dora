@@ -1,5 +1,11 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/cbs
-    username: cbs_mtf
-    password: cbs_mtf
+    username: dora
+    password: dora
+
+springdoc:
+  api-docs:
+    # For AWS API Gateway
+    version: openapi_3_0
+  show-actuator: true
