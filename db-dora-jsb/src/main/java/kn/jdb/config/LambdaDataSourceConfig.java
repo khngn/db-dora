@@ -15,7 +15,7 @@ import java.util.Base64;
 
 @Configuration
 @Profile("lambda")
-public class DataSourceConfig {
+public class LambdaDataSourceConfig {
 
     @Bean
     public DataSource dataSource() {
@@ -34,6 +34,10 @@ public class DataSourceConfig {
         config.setJdbcUrl(protocol + "://" + host + ":" + port + "/" + database);
         config.setUsername(username);
         config.setPassword(password);
+        config.setMinimumIdle(0);
+        // HikariDataSource (HikariPool-1) is not configured to allow pool suspension.
+        // This will cause problems when the application is checkpointed. Please configure allow-pool-suspension to fix this!
+        config.setAllowPoolSuspension(true);
 
         return new HikariDataSource(config);
     }

@@ -75,6 +75,11 @@
         <!--     <groupId>io.awspring.cloud</groupId> -->
         <!--     <artifactId>spring-cloud-aws-starter-secrets-manager</artifactId> -->
         <!-- </dependency> -->
+        <dependency>
+            <groupId>org.crac</groupId>
+            <artifactId>crac</artifactId>
+            <version>1.5.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springdoc</groupId>

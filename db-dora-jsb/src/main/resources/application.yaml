@@ -2,6 +2,10 @@ spring:
   application:
     name: db-dora-jsb
 
+logging:
+  level:
+    web: DEBUG
+
 management:
   endpoints:
     web:
