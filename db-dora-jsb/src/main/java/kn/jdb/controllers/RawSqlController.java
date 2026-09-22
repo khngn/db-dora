@@ -1,9 +1,11 @@
 package kn.jdb.controllers;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -12,9 +14,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @RestController
 @RequestMapping("/raw-sql")
@@ -43,7 +45,7 @@ public class RawSqlController {
                 int cols = md.getColumnCount();
 
                 while (rs.next()) {
-                    Map<String, Object> row = new LinkedHashMap<>();
+                    Map<String, Object> row = new TreeMap<>();
                     for (int i = 1; i <= cols; i++) {
                         row.put(md.getColumnLabel(i), rs.getObject(i));
                     }
@@ -52,7 +54,7 @@ public class RawSqlController {
                 return rows;
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to execute SQL", e);
         }
     }
 }

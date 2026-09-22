@@ -2,6 +2,7 @@ package kn.jdb.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -23,23 +24,30 @@ public class LambdaDataSourceConfig {
         String host = requiredEnv("DATASOURCE_HOST");
         String port = requiredEnv("DATASOURCE_PORT");
         String database = requiredEnv("DATASOURCE_DATABASE");
+        String jdbcUrl = protocol + "://" + host + ":" + port + "/" + database;
         String encryptedUsername = requiredEnv("DATASOURCE_USERNAME_BY_KMS");
         String encryptedPassword = requiredEnv("DATASOURCE_PASSWORD_BY_KMS");
 
         String username = decryptKmsCiphertext(encryptedUsername);
         String password = decryptKmsCiphertext(encryptedPassword);
 
+        HikariConfig config = getHikariConfig(jdbcUrl, username, password);
+        return new HikariDataSource(config);
+    }
+
+    @NonNull
+    private static HikariConfig getHikariConfig(String jdbcUrl, String username, String password) {
         HikariConfig config = new HikariConfig();
         //config.setDriverClassName("org.postgresql.Driver");
-        config.setJdbcUrl(protocol + "://" + host + ":" + port + "/" + database);
+        config.setJdbcUrl(jdbcUrl);
         config.setUsername(username);
         config.setPassword(password);
         config.setMinimumIdle(0);
+        // Fix for:
         // HikariDataSource (HikariPool-1) is not configured to allow pool suspension.
         // This will cause problems when the application is checkpointed. Please configure allow-pool-suspension to fix this!
         config.setAllowPoolSuspension(true);
-
-        return new HikariDataSource(config);
+        return config;
     }
 
     private static String decryptKmsCiphertext(String base64Ciphertext) {
