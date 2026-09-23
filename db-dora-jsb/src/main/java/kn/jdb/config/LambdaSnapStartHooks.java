@@ -16,10 +16,10 @@ import javax.sql.DataSource;
 public class LambdaSnapStartHooks implements Resource {
 
     private static final Logger log = LoggerFactory.getLogger(LambdaSnapStartHooks.class);
-    private final DataSource dataSource;
+    private final EnvDataSourceProvider dataSourceProvider;
 
-    public LambdaSnapStartHooks(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public LambdaSnapStartHooks(EnvDataSourceProvider dataSourceProvider) {
+        this.dataSourceProvider = dataSourceProvider;
         // Register this class as a CRaC resource so Lambda knows to trigger it
         Core.getGlobalContext().register(this);
     }
@@ -28,14 +28,14 @@ public class LambdaSnapStartHooks implements Resource {
     public void beforeCheckpoint(Context<? extends Resource> context) throws Exception {
         // Implement any logic needed before a snapshot is taken
         log.info("beforeCheckpoint: ...");
-        refreshDataSource(dataSource);
+        dataSourceProvider.getManagedDataSources().forEach(LambdaSnapStartHooks::refreshDataSource);
     }
 
     @Override
     public void afterRestore(Context<? extends Resource> context) throws Exception {
         // Implement any logic needed after a snapshot is restored
         log.info("afterRestore: ...");
-        refreshDataSource(dataSource);
+        dataSourceProvider.getManagedDataSources().forEach(LambdaSnapStartHooks::refreshDataSource);
     }
 
     /**

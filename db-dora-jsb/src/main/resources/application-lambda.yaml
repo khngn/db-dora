@@ -1,3 +1,22 @@
+spring:
+  autoconfigure:
+    # DataSourceAutoConfiguration is a standard Spring Boot auto-configuration that's always
+    # evaluated when spring-boot-starter-jdbc (or -data-jpa) is on the classpath — it's gated
+    # by @ConditionalOnClass(DataSource.class), which is always true since HikariCP/JDBC are
+    # dependencies. It only backs off if @ConditionalOnMissingBean(DataSource.class) finds a
+    # DataSource bean already registered.
+    #
+    # This profile has no single spring.datasource.* configured DataSource bean: connections
+    # are instead built per (environment, database) at request time by
+    # kn.jdb.config.EnvDataSourceProvider. Without these exclusions, Spring Boot's default
+    # DataSourceAutoConfiguration tries to auto-create its own "dataSource" bean from
+    # spring.datasource.* (which isn't set here), causing a startup failure
+    # ("Failed to determine a suitable driver class"). The health contributor auto-config is
+    # excluded for the same reason, since it also depends on a single auto-configured DataSource.
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.jdbc.autoconfigure.health.DataSourceHealthContributorAutoConfiguration
+
 springdoc:
   api-docs:
     enabled: false

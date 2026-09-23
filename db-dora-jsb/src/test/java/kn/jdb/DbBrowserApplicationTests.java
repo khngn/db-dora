@@ -1,5 +1,6 @@
 package kn.jdb;
 
+import kn.jdb.datasource.DataSourceProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -25,13 +26,15 @@ class DbBrowserApplicationTests {
 	@MockitoBean
 	private DataSource dataSource;
 
+	private final DataSourceProvider dataSourceProvider = environment -> dataSource;
+
 	@Test
 	void contextLoads() {
 	}
 
 	@Test
 	void getRowsReturnsPaginatedRows() throws Exception {
-		var controller = new kn.jdb.controllers.DatabasesController(dataSource);
+		var controller = new kn.jdb.controllers.DatabasesController(dataSourceProvider);
 		Connection connection = mock(Connection.class);
 		PreparedStatement statement = mock(PreparedStatement.class);
 		ResultSet resultSet = mock(ResultSet.class);
@@ -41,7 +44,8 @@ class DbBrowserApplicationTests {
 		when(dataSource.getConnection()).thenReturn(connection);
 		when(connection.getMetaData()).thenReturn(databaseMetaData);
 		when(databaseMetaData.getIdentifierQuoteString()).thenReturn("\"");
-		when(connection.prepareStatement("SELECT * FROM \"demo\".\"users\" LIMIT ? OFFSET ?")).thenReturn(statement);
+		when(connection.getSchema()).thenReturn("public");
+		when(connection.prepareStatement("SELECT * FROM \"public\".\"users\" LIMIT ? OFFSET ?")).thenReturn(statement);
 		when(statement.executeQuery()).thenReturn(resultSet);
 		when(resultSet.getMetaData()).thenReturn(resultSetMetaData);
 		when(resultSetMetaData.getColumnCount()).thenReturn(2);
@@ -51,7 +55,7 @@ class DbBrowserApplicationTests {
 		when(resultSet.getObject(1)).thenReturn(1, 2);
 		when(resultSet.getObject(2)).thenReturn("Ada", "Grace");
 
-		Map<String, Object> response = controller.getRows("demo", "users", 1, 2);
+		Map<String, Object> response = controller.getRows("demo", "users", 1, 2, null, null);
 
 		org.junit.jupiter.api.Assertions.assertEquals(1, response.get("page"));
 		org.junit.jupiter.api.Assertions.assertEquals(2, response.get("size"));
@@ -72,7 +76,7 @@ class DbBrowserApplicationTests {
 
 		IllegalArgumentException exception = org.junit.jupiter.api.Assertions.assertThrows(
 				IllegalArgumentException.class,
-				() -> new kn.jdb.controllers.DatabasesController(dataSource).getRows("demo", "users", -1, 10)
+				() -> new kn.jdb.controllers.DatabasesController(dataSourceProvider).getRows("demo", "users", -1, 10, null, null)
 		);
 
 		ProblemDetail problemDetail = handler.handleIllegalArgumentException(exception);
@@ -82,7 +86,7 @@ class DbBrowserApplicationTests {
 
 	@Test
 	void sqlErrorsReturnClientVisibleHttpStatus() throws Exception {
-		var controller = new kn.jdb.controllers.DatabasesController(dataSource);
+		var controller = new kn.jdb.controllers.DatabasesController(dataSourceProvider);
 		var handler = new kn.jdb.controllers.ApiExceptionHandler();
 		Connection connection = mock(Connection.class);
 		PreparedStatement statement = mock(PreparedStatement.class);
@@ -91,12 +95,13 @@ class DbBrowserApplicationTests {
 		when(dataSource.getConnection()).thenReturn(connection);
 		when(connection.getMetaData()).thenReturn(databaseMetaData);
 		when(databaseMetaData.getIdentifierQuoteString()).thenReturn("\"");
-		when(connection.prepareStatement("SELECT * FROM \"demo\".\"users\" LIMIT ? OFFSET ?")).thenReturn(statement);
+		when(connection.getSchema()).thenReturn("public");
+		when(connection.prepareStatement("SELECT * FROM \"public\".\"users\" LIMIT ? OFFSET ?")).thenReturn(statement);
 		when(statement.executeQuery()).thenThrow(new java.sql.SQLException("relation \"users\" does not exist"));
 
 		ResponseStatusException exception = org.junit.jupiter.api.Assertions.assertThrows(
 				ResponseStatusException.class,
-				() -> controller.getRows("demo", "users", 0, 10)
+				() -> controller.getRows("demo", "users", 0, 10, null, null)
 		);
 
 		ProblemDetail problemDetail = handler.handleResponseStatusException(exception);
@@ -107,7 +112,7 @@ class DbBrowserApplicationTests {
 
 	@Test
 	void invalidRawSqlReturnsBadRequest() throws Exception {
-		var controller = new kn.jdb.controllers.RawSqlController(dataSource);
+		var controller = new kn.jdb.controllers.RawSqlController(dataSourceProvider);
 		var handler = new kn.jdb.controllers.ApiExceptionHandler();
 		Connection connection = mock(Connection.class);
 		java.sql.Statement statement = mock(java.sql.Statement.class);
@@ -118,7 +123,7 @@ class DbBrowserApplicationTests {
 
 		ResponseStatusException exception = org.junit.jupiter.api.Assertions.assertThrows(
 				ResponseStatusException.class,
-				() -> controller.executeRawSql("select from")
+				() -> controller.executeRawSql(null, null, null, "select from")
 		);
 
 		ProblemDetail problemDetail = handler.handleResponseStatusException(exception);
