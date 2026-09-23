@@ -50,6 +50,7 @@ lambda() {(
   cp -v "db-dora-jsb.jar" "dist/lambda.zip"
   # cp "db-dora-jsb-openapi.json" "dist/openapi.json"
   jq . "db-dora-jsb-openapi.json" > "C:/Developer/repo/atlas-engine/sample-project/infrastructure/CMDB/devkn/segments/CBS/kndd/config/kndd-api-private/kndd-openapi.json"
+  jq . "db-dora-jsb-openapi.json" > "../openapi/db-dora-jsb-openapi.json"
   ls -lhF "dist/lambda.zip"
   # #############################################################
   aws_load_profile

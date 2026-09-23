@@ -17,6 +17,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -106,7 +107,7 @@ public class DatabasesController {
                     columns.add(column);
                 }
             }
-            columns.sort((i, j) -> ((String) i.get("name")).compareTo((String) j.get("name")));
+            columns.sort(Comparator.comparing(i -> ((String) i.get("name"))));
             return columns;
         } catch (SQLException e) {
             throw databaseOperationFailed("list columns for table " + table, e);
