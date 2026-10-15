@@ -17,6 +17,8 @@ import java.sql.ResultSetMetaData;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,31 +60,28 @@ class DbBrowserApplicationTests {
 
 		Map<String, Object> response = controller.getRows("demo", "users", 1, 2, null, null);
 
-		org.junit.jupiter.api.Assertions.assertEquals(1, response.get("page"));
-		org.junit.jupiter.api.Assertions.assertEquals(2, response.get("size"));
-		org.junit.jupiter.api.Assertions.assertInstanceOf(List.class, response.get("rows"));
+		assertThat(response.get("page")).isEqualTo(1);
+		assertThat(response.get("count")).isEqualTo(2);
+		assertThat(response.get("rows")).isInstanceOf(List.class);
 
 		@SuppressWarnings("unchecked")
 		List<Map<String, Object>> rows = (List<Map<String, Object>>) response.get("rows");
-		org.junit.jupiter.api.Assertions.assertEquals(2, rows.size());
-		org.junit.jupiter.api.Assertions.assertEquals(1, rows.get(0).get("id"));
-		org.junit.jupiter.api.Assertions.assertEquals("Ada", rows.get(0).get("name"));
-		org.junit.jupiter.api.Assertions.assertEquals(2, rows.get(1).get("id"));
-		org.junit.jupiter.api.Assertions.assertEquals("Grace", rows.get(1).get("name"));
+		assertThat(rows).hasSize(2);
+		assertThat(rows.get(0).get("id")).isEqualTo(1);
+		assertThat(rows.get(0).get("name")).isEqualTo("Ada");
+		assertThat(rows.get(1).get("id")).isEqualTo(2);
+		assertThat(rows.get(1).get("name")).isEqualTo("Grace");
 	}
 
 	@Test
 	void invalidPaginationReturnsBadRequest() throws Exception {
 		var handler = new kn.jdb.controllers.ApiExceptionHandler();
 
-		IllegalArgumentException exception = org.junit.jupiter.api.Assertions.assertThrows(
-				IllegalArgumentException.class,
-				() -> new kn.jdb.controllers.DatabasesController(dataSourceProvider).getRows("demo", "users", -1, 10, null, null)
-		);
+		IllegalArgumentException exception = catchThrowableOfType(IllegalArgumentException.class, () -> new kn.jdb.controllers.DatabasesController(dataSourceProvider).getRows("demo", "users", -1, 10, null, null));
 
 		ProblemDetail problemDetail = handler.handleIllegalArgumentException(exception);
-		org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
-		org.junit.jupiter.api.Assertions.assertEquals("page must be greater than or equal to 0", problemDetail.getDetail());
+		assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+		assertThat(problemDetail.getDetail()).isEqualTo("page must be greater than or equal to 0");
 	}
 
 	@Test
@@ -100,15 +99,12 @@ class DbBrowserApplicationTests {
 		when(connection.prepareStatement("SELECT * FROM \"public\".\"users\" LIMIT ? OFFSET ?")).thenReturn(statement);
 		when(statement.executeQuery()).thenThrow(new java.sql.SQLException("relation \"users\" does not exist"));
 
-		ResponseStatusException exception = org.junit.jupiter.api.Assertions.assertThrows(
-				ResponseStatusException.class,
-				() -> controller.getRows("demo", "users", 0, 10, null, null)
-		);
+		ResponseStatusException exception = catchThrowableOfType(ResponseStatusException.class, () -> controller.getRows("demo", "users", 0, 10, null, null));
 
 		ProblemDetail problemDetail = handler.handleResponseStatusException(exception);
-		org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), problemDetail.getStatus());
-		org.junit.jupiter.api.Assertions.assertEquals("Failed to fetch rows for table users", problemDetail.getDetail());
-		org.junit.jupiter.api.Assertions.assertTrue(problemDetail.getProperties().get("error").toString().contains("relation \"users\" does not exist"));
+		assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		assertThat(problemDetail.getDetail()).isEqualTo("Failed to fetch rows for table users");
+		assertThat(problemDetail.getProperties().get("error").toString()).contains("relation \"users\" does not exist");
 	}
 
 	@Test
@@ -122,15 +118,12 @@ class DbBrowserApplicationTests {
 		when(connection.createStatement()).thenReturn(statement);
 		when(statement.execute("select from")).thenThrow(new java.sql.SQLException("syntax error at or near \"from\""));
 
-		ResponseStatusException exception = org.junit.jupiter.api.Assertions.assertThrows(
-				ResponseStatusException.class,
-				() -> controller.executeRawSql(null, null, null, "select from")
-		);
+		ResponseStatusException exception = catchThrowableOfType(ResponseStatusException.class, () -> controller.executeRawSql(null, null, null, "select from"));
 
 		ProblemDetail problemDetail = handler.handleResponseStatusException(exception);
-		org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
-		org.junit.jupiter.api.Assertions.assertEquals("Failed to execute SQL", problemDetail.getDetail());
-		org.junit.jupiter.api.Assertions.assertTrue(problemDetail.getProperties().get("error").toString().contains("syntax error"));
+		assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+		assertThat(problemDetail.getDetail()).isEqualTo("Failed to execute SQL");
+		assertThat(problemDetail.getProperties().get("error").toString()).contains("syntax error");
 	}
 
 	@Test
@@ -153,7 +146,7 @@ class DbBrowserApplicationTests {
 		);
 
 		verify(statement).execute(firstStatement);
-		org.junit.jupiter.api.Assertions.assertEquals(Map.of("updateCount", 1), result);
+		assertThat(result).isEqualTo(Map.of("updateCount", 1));
 	}
 
 }
