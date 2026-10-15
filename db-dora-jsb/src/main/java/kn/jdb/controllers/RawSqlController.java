@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/raw-sql")
@@ -53,7 +54,7 @@ public class RawSqlController {
                 schemaChanged = true;
             }
             try (Statement stmt = conn.createStatement()) {
-                boolean hasResultSet = stmt.execute(sql);
+                boolean hasResultSet = stmt.execute(firstStatement(sql));
 
                 if (!hasResultSet) {
                     return Map.of("updateCount", stmt.getUpdateCount());
@@ -81,5 +82,12 @@ public class RawSqlController {
         } catch (SQLException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to execute SQL", e);
         }
+    }
+
+    private static String firstStatement(String sql) {
+        String withoutComments = sql.lines()
+                .filter(line -> !line.stripLeading().startsWith("--"))
+                .collect(Collectors.joining("\n"));
+        return withoutComments.split(";", 2)[0].trim();
     }
 }

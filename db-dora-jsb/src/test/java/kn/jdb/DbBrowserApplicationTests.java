@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -130,6 +131,29 @@ class DbBrowserApplicationTests {
 		org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
 		org.junit.jupiter.api.Assertions.assertEquals("Failed to execute SQL", problemDetail.getDetail());
 		org.junit.jupiter.api.Assertions.assertTrue(problemDetail.getProperties().get("error").toString().contains("syntax error"));
+	}
+
+	@Test
+	void rawSqlExecutesOnlyFirstStatementIgnoringSemicolonsInComments() throws Exception {
+		var controller = new kn.jdb.controllers.RawSqlController(dataSourceProvider);
+		Connection connection = mock(Connection.class);
+		java.sql.Statement statement = mock(java.sql.Statement.class);
+		String firstStatement = "select 1";
+
+		when(dataSource.getConnection()).thenReturn(connection);
+		when(connection.createStatement()).thenReturn(statement);
+		when(statement.execute(firstStatement)).thenReturn(false);
+		when(statement.getUpdateCount()).thenReturn(1);
+
+		Object result = controller.executeRawSql(
+				null,
+				null,
+				null,
+				"-- ignored; comment\n" + firstStatement + "; select 2"
+		);
+
+		verify(statement).execute(firstStatement);
+		org.junit.jupiter.api.Assertions.assertEquals(Map.of("updateCount", 1), result);
 	}
 
 }
